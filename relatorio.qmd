@@ -1,0 +1,70 @@
+---
+title: "Estimativas via planos amostrais"
+author: "Iane Maria Santos Martins"
+format: 
+  pdf: 
+    fig-cap: true
+  html:
+    toc: true
+    number-sections: true
+    css: styles.css
+geometry: margin=3.5cm
+header-includes:
+  - \usepackage{setspace}
+  - \onehalfspacing
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE}
+source("script.R")
+```
+
+# Introdução
+
+O presente trabalho tem como objetivo descrever alguns métodos de amostragens e apresentar como esses métodos são aplicados para investigar características de uma população. O trabalho conta com uma base de dados com as seguintes variáveis:
+
+- **local**: localidade da cidade;
+- **sexo**: masculino ou feminino;
+- **ensino**: grau de instrução do respondente, podendo ser fundamental, médio, superior ou pos graduado;
+- **tam**: tamanho da família, isto é, número de integrantes;
+- **renda**: renda familiar em salários mínimos;
+- **fumantes**: número de fumantes na família.
+
+Também foi disponibilizada uma base de dados com uma lista de números sorteados. Esses números representam a linha de elementos sorteados através do método de Amostragem Aleatório Simples. Isto é, dada a população, é selecionada uma amostra de pessoas que fornecem os dados para a pesquisa, quando o método de amostragem é AAS, tem-se que esse método é através de sorteio, em que cada elemento tem a mesma chance de ocorrer. A lista fornecida diz respeito a lista elementos/pessoas sorteados.
+
+Nesse sentido, este trabalho se propõe a investigar a relação entre população e amostra de acordo com vários métodos de amostragem, a lista a seguir mostra o tipo de amostragem e um resumo da investigação feita utilizando cada um deles.
+
+1) Amostragem Aleatória Simples: Estimar métricas populacionais através de parâmetros amostrais utilizando o sorteio fornecido;
+
+2) Amostragem por Conglomerado: Estimar métricas populacionais através de parâmetros amostrais utilizando cálculos mais robustos que discutam a relação entre custo da pesquisa e resultados obitidos;
+
+3) Amostragem Estratificada: Separa a população em características fornecidas pelas variáveis e discute quais variáveis são mais relevantes para estimar a renda;
+
+4) Conclusão: analisar qual método de amostragem foi mais eficiente em prever as métricas populacionais.
+
+# Amostragem Aleatória Simples
+
+# Amostragem por Conglomerado  
+
+Descrição do Plano Amostral:
+
+- Unidade de Amostra: Localidade (local);
+- População de Conglomerados ($M$): 7 localidades;
+- Amostra de Conglomerados ($m$): 3 localidades.
+- Método de Sorteio: Amostragem Aleatória Simples sem reposição aplicada nas localidades (variável "local");
+- Procedimento: Sorteamos 3 números entre 1 e 7 através da função `sample` no R. As localidades correspondentes a esses números terão todos os seus dados coletados para compor a amostra final.
+
+Observação: Para manter as mesmas unidades do sorteio e facilitar análise, foi definida uma seed.
+
+# Amostragem Estratificada
+
+
+
+
+```{r, echo=FALSE, fig.width=10, fig.height=6}
+
+
+```
