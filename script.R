@@ -1,5 +1,7 @@
 library("readxl")
 library("tidyverse")
+library(dplyr)
+library(tidyr)
 
 # ----- COLETA DE DADOS
 
@@ -12,7 +14,7 @@ pop_data <- read_excel(path, sheet = "População-aTrabalhar")
 # Dados Amostragem Aleatória Simples
 sample_rank <- read_excel(path, sheet = "AmostraSorteada")
 sample_rank <- round(as.numeric(as.character(sample_rank[[1]])))
-sample_rank <- sample_rank[!is.na(sample_rank)]
+#sample_rank <- sample_rank[!is.na(sample_rank)]
 
 sample_data <- pop_data[sample_rank, ]
 
@@ -282,7 +284,6 @@ limite_inf <- prop_ac_fumantes - z_98 * erro_padrao_prop
 limite_sup <- prop_ac_fumantes + z_98 * erro_padrao_prop
 
 # Resultados
-
 cat("=========================================================\n")
 cat("    RESULTADOS: PROPORÇÃO DE FUMANTES                    \n")
 cat("=========================================================\n")
@@ -293,4 +294,53 @@ cat("---------------------------------------------------------\n")
 cat("INTERVALO DE CONFIANÇA (98%):\n")
 cat(sprintf("Formato Decimal:               [%.4f ; %.4f]\n", limite_inf, limite_sup))
 cat(sprintf("Formato Porcentagem:           [%.2f%% ; %.2f%%]\n", limite_inf * 100, limite_sup * 100))
+cat("=========================================================\n")
+
+
+
+
+
+# AMOSTRAGEM ESTRATIFICADA
+
+avaliar_potencial <- function(df, var_alvo, var_estrato) {
+  df %>%
+    group_by(.data[[var_estrato]]) %>%
+    summarise(
+      n = n(),
+      media = mean(.data[[var_alvo]], na.rm = TRUE),
+      sd_interna = sd(.data[[var_alvo]], na.rm = TRUE),
+      .groups = 'drop'
+    ) %>%
+    summarise(
+      Variavel = var_estrato,
+      # Desvio padrão das médias -> Quanto maior o std, melhor a separação entre grupos
+      Separacao_Medias = sd(media, na.rm = TRUE),
+      # Média ponderada dos desvios padrões (Quanto menor, mais homogêneo o estrato)
+      Homogeneidade_Interna = weighted.mean(sd_interna, n, na.rm = TRUE)
+    )
+}
+
+# Lista de variáveis para teste
+candidatas <- c("local", "sexo", "ensino", "tam", "fumantes")
+
+# Execução do Ranking
+ranking <- lapply(candidatas, function(v) avaliar_potencial(pop_data, "renda", v)) %>%
+  bind_rows() %>%
+  # Criamos um Score: Prioriza alta separação de médias e baixa variância interna
+  mutate(Score_Recomendacao = Separacao_Medias / Homogeneidade_Interna) %>%
+  arrange(desc(Score_Recomendacao))
+
+# Resultados
+
+cat("=========================================================\n")
+cat("      RANKING DE VARIÁVEIS PARA ESTRATIFICAÇÃO          \n")
+cat("          (Objetivo: Estimar a Renda)                   \n")
+cat("=========================================================\n")
+print(as.data.frame(ranking), digits = 4)
+cat("---------------------------------------------------------\n")
+
+melhor_var <- ranking$Variavel[1]
+cat(sprintf("RECOMENDAÇÃO: A variável '%s' é a mais adequada.\n", melhor_var))
+cat(sprintf("JUSTIFICATIVA: Ela apresenta o melhor equilíbrio entre\n"))
+cat(sprintf("diferenciação de rendas e grupos internos homogêneos.\n"))
 cat("=========================================================\n")

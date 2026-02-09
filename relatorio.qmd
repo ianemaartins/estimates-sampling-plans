@@ -45,7 +45,153 @@ Nesse sentido, este trabalho se propõe a investigar a relação entre populaç�
 
 4) Conclusão: analisar qual método de amostragem foi mais eficiente em prever as métricas populacionais.
 
+Vale ressaltar ainda que para o desenvolvimento deste trabalho foram utilizada a linguagem R e as bibliotecas `readxl`, `tidyverse`, `dplyr`, `tidyr`. Para a coleta de dados foi utilizado o seguinte comando:
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Dados gerais
+path = "data.xlsx"
+data = read_excel(path)
+
+# Dados da população
+pop_data <- read_excel(path, sheet = "População-aTrabalhar")
+```
+
 # Amostragem Aleatória Simples
+
+Para a análise utilizando Amostragem Aleatória Simples sem reposição, foi utilizada a base de dados com o sorteio. Através dessa base de dados foi gerada uma nova base de dados apenas com os elementos da amostra.
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Dados Amostragem Aleatória Simples
+sample_rank <- read_excel(path, sheet = "AmostraSorteada")
+sample_rank <- round(as.numeric(as.character(sample_rank[[1]]))) #ajusta tipagem
+sample_rank <- sample_rank[!is.na(sample_rank)] #remove dados faltantes
+sample_data <- pop_data[sample_rank, ]
+
+```
+
+Após coletar o dataframe da população e construir um dataframe com os dados sorteados, cria-se variáveis para a realização dos cálculos
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Variáveis
+
+N <- nrow(pop_data) # Tamanho total da população - famílias
+n <- nrow(sample_data) # Tamanho da amostra
+f <- n / N # Proporção da população que compõe a amostra
+z_98 <- qnorm(1 - 0.02/2) # Valor crítico p/ Intervalo de Confiança de 98%
+
+```
+
+Em seguida, realiza-se os cálculos:
+
+a) Estimativa da média populacional de renda e cálculo da variância da estimativa
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+#Renda
+
+media_estimada <- mean(sample_data$renda, na.rm = TRUE)
+
+variancia_amostral <- var(sample_data$renda, na.rm = TRUE)
+variancia_estimativa <- (1 - f) * (variancia_amostral / n)
+```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("RESULTADOS: ESTIMATIVA DA MÉDIA (AAS)             \n",
+    sprintf("Tamanho da População (N):      %d\n", N),
+    sprintf("Tamanho da Amostra (n):        %d\n", n),
+    sprintf("Fração de Amostragem (f):      %.4f\n", f),
+    sprintf("Média Estimada (renda):        %.4f\n", media_estimada),
+    sprintf("Variância da Estimativa:       %.6f\n", variancia_estimativa),
+    sprintf("Erro Padrão da Média:          %.4f\n", sqrt(variancia_estimativa)))
+```
+
+
+
+
+b) Estimativa do tamanho médio das famílias e cálculo da variância da estimativa
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Tamanho das famílias
+
+media_tam_estimada <- mean(sample_data$tam, na.rm = TRUE)
+
+variancia_amostral_tam <- var(sample_data$tam, na.rm = TRUE)
+variancia_estimativa_tam <- (1 - f) * (variancia_amostral_tam / n)
+```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("RESULTADOS: ESTIMATIVA DO TAMANHO DA FAMÍLIA (AAS)   \n",
+    sprintf("Tamanho da População (N):      %d\n", N),
+    sprintf("Tamanho da Amostra (n):        %d\n", n),
+    sprintf("Média Estimada (tam):          %.4f integrantes\n", media_tam_estimada),
+    sprintf("Variância da Estimativa:       %.6f\n", variancia_estimativa_tam),
+    sprintf("Erro Padrão da Média:          %.4f\n", sqrt(variancia_estimativa_tam)))
+```
+
+
+
+
+c) Estimativa do total de pessoas que moram na região e variância da estimativa
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Total de pessoas
+
+media_tam <- mean(sample_data$tam, na.rm = TRUE)
+total_pessoas_estimado <- N * media_tam
+
+variancia_amostral_tam <- var(sample_data$tam, na.rm = TRUE)
+variancia_total_estimado <- (N^2) * (1 - f) * (variancia_amostral_tam / n)
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("RESULTADOS: ESTIMATIVA DO TOTAL DE PESSOAS        \n",
+    sprintf("Tamanho da População (N famílias): %d\n", N),
+    sprintf("Tamanho da Amostra (n famílias):   %d\n", n),
+    sprintf("Total Estimado de Pessoas:         %.2f\n", total_pessoas_estimado),
+    sprintf("Variância da Estimativa do Total:  %.2f\n", variancia_total_estimado),
+    sprintf("Erro Padrão do Total:              %.2f\n", sqrt(variancia_total_estimado)))
+
+```
+
+
+
+
+
+d) Estimativa da proporção de fumantes e variância da estimativa, bem como o intervalo de 98% de confiança para a proporção populacional
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Proporção de fumantes - unidade amostral é o indivíduo
+
+y <- sample_data$fumantes
+x <- sample_data$tam
+p_chapeu <- sum(y) / sum(x)
+
+media_x <- mean(x)
+variancia_y <- var(y)
+variancia_x <- var(x)
+cov_xy <- cov(x, y)
+
+variancia_p <- ((1 - f) / (n * media_x^2)) * (variancia_y + (p_chapeu^2 * variancia_x) - (2 * p_chapeu * cov_xy))
+erro_padrao_p <- sqrt(variancia_p)
+
+limite_inf <- p_chapeu - z_98 * erro_padrao_p
+limite_sup <- p_chapeu + z_98 * erro_padrao_p
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("ESTIMATIVA DA PROPORÇÃO DE FUMANTES (RAZÃO)         \n",
+    sprintf("Proporção Estimada (p):        %.4f (%.2f%%)\n", p_chapeu, p_chapeu * 100),
+    sprintf("Variância da Estimativa:       %.8f\n", variancia_p),
+    sprintf("Erro Padrão (SE):              %.4f\n", erro_padrao_p),
+    "INTERVALO DE CONFIANÇA (98%):\n",
+    sprintf("Formato Decimal:               [%.4f ; %.4f]\n", limite_inf, limite_sup),
+    sprintf("Formato Porcentagem:           [%.2f%% ; %.2f%%]\n", limite_inf * 100, limite_sup * 100))
+```
+
+
+
+
 
 # Amostragem por Conglomerado  
 
@@ -57,14 +203,246 @@ Descrição do Plano Amostral:
 - Método de Sorteio: Amostragem Aleatória Simples sem reposição aplicada nas localidades (variável "local");
 - Procedimento: Sorteamos 3 números entre 1 e 7 através da função `sample` no R. As localidades correspondentes a esses números terão todos os seus dados coletados para compor a amostra final.
 
-Observação: Para manter as mesmas unidades do sorteio e facilitar análise, foi definida uma seed.
+Para manter as mesmas unidades do sorteio e facilitar análise, foi definida uma seed. Sendo assim, o código utilizado foi:
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Sorteio das localidades
+
+conglomerados_unicos <- unique(pop_data$local)
+
+set.seed(123)
+sorteio <- sample(1:length(conglomerados_unicos), size = 3)
+conglomerados_sorteados <- conglomerados_unicos[sorteio]
+
+amostra_ac <- pop_data[pop_data$local %in% conglomerados_sorteados, ]
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("SORTEIO DE CONGLOMERADOS         \n",
+    sprintf("Localidades Sorteadas: %s\n", paste(conglomerados_sorteados, collapse = ", ")),
+    "Método Utilizado: Amostragem Aleatória Simples (AAS) aplicada aos \n",
+    "conglomerados via função sample().          \n")
+```
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Variáveis
+
+M <- length(conglomerados_unicos)
+m <- 3
+f_ac <- m / M
+
+```
+
+
+Realiza-se os cálculos:
+
+a) Estimativa da média populacional de renda e cálculo da variância da estimativa
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Renda
+
+# cálculos Agregados por Conglomerado
+resumo_ac <- amostra_ac %>%
+  group_by(local) %>%
+  summarise(
+    yi = sum(renda),
+    xi = n())
+
+# variáveis
+y_total_amostra <- sum(resumo_ac$yi)
+x_total_amostra <- sum(resumo_ac$xi)
+media_ac_renda <- y_total_amostra / x_total_amostra
+
+# variancia da estimativa (média) - entre os conglomerados
+media_x_barra <- x_total_amostra / m
+s2_c <- sum((resumo_ac$yi - media_ac_renda * resumo_ac$xi)^2) / (m - 1)
+
+variancia_media_ac <- (1 - f_ac) * (s2_c / (m * media_x_barra^2))
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("RESULTADOS: AMOSTRAGEM POR CONGLOMERADO\n",
+    sprintf("Localidades Sorteadas: %s\n", paste(conglomerados_sorteados, collapse = ", ")),
+    sprintf("Média Estimada da Renda:       %.4f\n", media_ac_renda),
+    sprintf("Variância da Estimativa:       %.6f\n", variancia_media_ac),
+    sprintf("Erro Padrão da Média:          %.4f\n", sqrt(variancia_media_ac)),
+    sprintf("Margem de Erro (95%%):          %.4f\n", 1.96 * sqrt(variancia_media_ac)))
+```
+
+b) Estimativa do tamanho médio das famílias e cálculo da variância da estimativa
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Tamanho médio das famílias
+
+# calculo agregado por conglomerado
+resumo_ac_tam <- amostra_ac %>%
+  group_by(local) %>%
+  summarise(
+    yi = sum(tam, na.rm = TRUE),
+    xi = n()
+  )
+
+# variáveis
+
+y_total_amostra_tam <- sum(resumo_ac_tam$yi)
+x_total_amostra_tam <- sum(resumo_ac_tam$xi)
+media_ac_tam <- y_total_amostra_tam / x_total_amostra_tam
+
+# variância da estimativa
+
+media_x_barra <- x_total_amostra_tam / m
+f_ac <- m / M
+
+# variância entre conglomerados
+
+s2_c_tam <- sum((resumo_ac_tam$yi - media_ac_tam * resumo_ac_tam$xi)^2) / (m - 1)
+variancia_media_ac_tam <- (1 - f_ac) * (s2_c_tam / (m * media_x_barra^2))
+```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("RESULTADOS: TAMANHO MÉDIO DAS FAMÍLIAS\n",
+    sprintf("Média Estimada (tam):          %.4f integrantes\n", media_ac_tam),
+    sprintf("Variância da Estimativa:       %.6f\n", variancia_media_ac_tam),
+    sprintf("Erro Padrão da Média:          %.4f\n", sqrt(variancia_media_ac_tam)),
+    sprintf("Intervalo de Confiança (95%%):  [%.4f ; %.4f]\n", 
+            media_ac_tam - 1.96 * sqrt(variancia_media_ac_tam),
+            media_ac_tam + 1.96 * sqrt(variancia_media_ac_tam)))
+```
+
+c) Estimativa do total de pessoas que moram na região e variância da estimativa
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Total de pessoas
+
+# calculo agregado por conglomerado
+resumo_ac_total <- amostra_ac %>%
+  group_by(local) %>%
+  summarise(
+    yi = sum(tam, na.rm = TRUE)
+  )
+
+# variáveis
+M <- 7
+m <- 3
+f_ac <- m / M
+
+total_pessoas_estimado_ac <- (M / m) * sum(resumo_ac_total$yi)
+
+# variância da Estimativa do Total
+s2_y_totais <- var(resumo_ac_total$yi)
+variancia_total_ac <- (M^2) * (1 - f_ac) * (s2_y_totais / m)
+```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("RESULTADOS: TOTAL DE PESSOAS NA REGIÃO\n",
+    sprintf("Total Estimado de Pessoas:     %.2f\n", total_pessoas_estimado_ac),
+    sprintf("Variância da Estimativa:       %.2f\n", variancia_total_ac),
+    sprintf("Erro Padrão do Total:          %.2f\n", sqrt(variancia_total_ac)),
+    sprintf("Intervalo de Confiança (95%%):  [%.2f ; %.2f]\n", 
+            total_pessoas_estimado_ac - 1.96 * sqrt(variancia_total_ac),
+            total_pessoas_estimado_ac + 1.96 * sqrt(variancia_total_ac)))
+```
+
+d) Estimativa da proporção de fumantes e variância da estimativa, bem como o intervalo de 98% de confiança para a proporção populacional
+
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+# Proporção de fumantes
+
+# calculo agregado por conglomerado
+resumo_ac_prop <- amostra_ac %>%
+  group_by(local) %>%
+  summarise(
+    yi = sum(fumantes, na.rm = TRUE),
+    xi = sum(tam, na.rm = TRUE)
+  )
+
+# Estimativa da Proporção (Razão)
+y_total_amostra_fum <- sum(resumo_ac_prop$yi)
+x_total_amostra_pes <- sum(resumo_ac_prop$xi)
+prop_ac_fumantes <- y_total_amostra_fum / x_total_amostra_pes
+
+# Variância da Estimativa da Proporção
+m <- 3
+M <- 7
+f_ac <- m / M
+media_x_barra_pes <- x_total_amostra_pes / m
+
+# Variância residual entre os totais observados e os esperados pela razão
+s2_c_prop <- sum((resumo_ac_prop$yi - prop_ac_fumantes * resumo_ac_prop$xi)^2) / (m - 1)
+variancia_prop_ac <- (1 - f_ac) * (s2_c_prop / (m * media_x_barra_pes^2))
+
+# Intervalo de Confiança (98%)
+z_98 <- qnorm(1 - 0.02/2) # Valor crítico ~2.326
+erro_padrao_prop <- sqrt(variancia_prop_ac)
+limite_inf <- prop_ac_fumantes - z_98 * erro_padrao_prop
+limite_sup <- prop_ac_fumantes + z_98 * erro_padrao_prop
+```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("RESULTADOS: PROPORÇÃO DE FUMANTES\n",
+    sprintf("Proporção Estimada:            %.4f ou %.2f%%\n", prop_ac_fumantes, prop_ac_fumantes * 100),
+    sprintf("Variância da Estimativa:       %.8f\n", variancia_prop_ac),
+    sprintf("Erro Padrão da Proporção:      %.4f\n", erro_padrao_prop),
+    "INTERVALO DE CONFIANÇA (98%):\n",
+    sprintf("Formato Decimal:               [%.4f ; %.4f]\n", limite_inf, limite_sup),
+    sprintf("Formato Porcentagem:           [%.2f%% ; %.2f%%]\n", limite_inf * 100, limite_sup * 100))
+```
+
 
 # Amostragem Estratificada
 
+A amostragem estratificada é uma método de amostragem que divide a população em subgrupos homogêneos e mututalmente exclusivos, denominados estratos. A divisão desses subgrupos se dá com base em características, como idade, gênero, renda, a depender do objeto do estudo. Para a seleção da melhor variável de estratificação, deve-se considerar a estrutura da variância dos dados, visto que o objetivo é conseguir dividir os dados da maneira mais homogênea possível dentro de um mesmo estrato e mais diversa possível entre os estratos diferentes. Isto é, objetiva-se uma maior homogeneidade intragrupo e de uma heterogeneidade intergrupo.
 
+Sendo assim, a melhor variável para dividir a população entre estratos é aquela que consegue equilibrar semelhança interna dos grupos com diferença externa entre os grupos. Para mensurar essa relação, utiliza-se a razão entre a Variância entre Médias e a Variância Interna dos estratos. Quanto maior for esse coeficiente, maior será o ganho de precisão do plano amostral. Isso ocorre porque, ao reduzir a variância interna, o erro padrão da estimativa global diminui, permitindo projeções mais exatas sobre a variável alvo a partir do grupo ao qual cada elemento pertence. 
 
+Ao aplicar esse raciocínio à base de dados populacional com foco na renda, identificou-se que o ensino foi a variável que apresentou o maior coeficiente de recomendação. Estatisticamente, o ensino obteve uma variância entre médias de aproximadamente 3,37 e uma média de variância interna de 1,907. A variável sexo apresentou o segundo melhor desempenho. Portanto, conclui-se que, para a formulação de um plano de amostragem estratificada otimizado, o ensino e o sexo seriam as variáveis fundamentais para garantir a precisão nas estimativas de renda. 
 
-```{r, echo=FALSE, fig.width=10, fig.height=6}
+O código a seguir explicita como o cálculo foi desenvolvido:
 
+```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
+#função para avaliar potencial das variáveis
+avaliar_potencial <- function(df, var_alvo, var_estrato) {
+  df %>%
+    group_by(.data[[var_estrato]]) %>%
+    summarise(
+      n = n(),
+      media = mean(.data[[var_alvo]], na.rm = TRUE),
+      sd_interna = sd(.data[[var_alvo]], na.rm = TRUE),
+      .groups = 'drop'
+    ) %>%
+    summarise(
+      Variavel = var_estrato,
+      # Desvio padrão das médias (quanto maior o std, melhor a separação entre grupos)
+      Separacao_Medias = sd(media, na.rm = TRUE),
+      # Média ponderada dos desvios padrões (quanto menor, mais homogêneo o estrato)
+      Homogeneidade_Interna = weighted.mean(sd_interna, n, na.rm = TRUE))}
 
+# Lista de variáveis para teste
+candidatas <- c("local", "sexo", "ensino", "tam", "fumantes")
+
+# Execução do Ranking
+ranking <- lapply(candidatas, function(v) avaliar_potencial(pop_data, "renda", v)) %>%
+  bind_rows() %>%
+  # Criação do coeficiente
+  mutate(Score_Recomendacao = Separacao_Medias / Homogeneidade_Interna) %>%
+  arrange(desc(Score_Recomendacao))
 ```
+
+```{r, echo=FALSE, warning=FALSE, message = TRUE, fig.width=10, fig.height=6}
+cat("RANKING DE VARIÁVEIS PARA ESTRATIFICAÇÃO VISANDO A RENDA\n")
+print(as.data.frame(ranking), digits = 4, row.names = FALSE)
+melhor_var <- ranking$Variavel[1]
+cat(sprintf("\nRECOMENDAÇÃO: A variável '%s' é a mais adequada,\n", melhor_var),
+    "pois ela apresenta o melhor equilíbrio entre\n",
+    "diferenciação de rendas e grupos internos homogêneos.\n")
+```
+
+# Comparação entre Métodos de Amostragem
+
+Para selecionar o método mais adequado à estimação da renda média, do tamanho médio das famílias e da proporção de usuários do programa de alimentação popular, é fundamental entender a natureza de cada variável no que diz respeito à precisão estatística e à viabilidade logística. Em termos gerais, a Amostragem Aleatória Simples (AAS) oferece maior precisão, enquanto a Amostragem por Conglomerados (AC) destaca-se pela eficiência operacional, especialmente quando o custo da coleta é um fator restritivo.
+
+Analisando cada variável individualmente, observa-se que a renda e o tamanho da família se beneficiam da AAS. Devido à alta variabilidade desses indicadores entre os domicílios, a AAS garante uma cobertura mais abrangente da população, diminuindo o risco de viés de seleção, como, por exemplo, o sorteio acidental de áreas com perfis socioeconômicos homogêneos, isto é, selecionar apenas ricos ou apenas pobres.
+
+Por outro lado, para investigar o uso de programas de alimentação popular, a abordagem por conglomerados apresenta vantagens, Uma vez que o alcance de políticas públicas costuma ter uma forte delimitação geográfica. Nesse caso, a utilização de AC permite capturar as dinâmicas desses locais específicos. Em uma amostragem puramente aleatória (AAS), essas áreas de alta concentração poderiam ser sub-representadas caso poucas unidades fossem sorteadas em tais localidades.
