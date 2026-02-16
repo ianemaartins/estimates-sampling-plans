@@ -21,4 +21,4 @@ Nesse sentido, propõe-se a investigar a relação entre população e amostra d
 
 4) Conclusão: analisar qual método de amostragem foi mais eficiente em prever as métricas populacionais.
 
-Vale ressaltar ainda que para o desenvolvimento deste trabalho utilizou-se a linguagem R e as bibliotecas `readxl`, `tidyverse`, `dplyr`, `tidyr`. Para a coleta de dados foi utilizado o seguinte comando:
+Vale ressaltar ainda que para o desenvolvimento deste trabalho utilizou-se a linguagem R e as bibliotecas `readxl`, `tidyverse`, `dplyr`, `tidyr`.
