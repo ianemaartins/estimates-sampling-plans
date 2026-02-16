@@ -27,25 +27,25 @@ source("script.R")
 O presente trabalho tem como objetivo descrever alguns métodos de amostragens e apresentar como esses métodos são aplicados para investigar características de uma população. O trabalho conta com uma base de dados com as seguintes variáveis:
 
 - **local**: localidade da cidade;
-- **sexo**: masculino ou feminino;
+- **sexo**: gênero do respondente, podendo ser masculino ou feminino;
 - **ensino**: grau de instrução do respondente, podendo ser fundamental, médio, superior ou pos graduado;
-- **tam**: tamanho da família, isto é, número de integrantes;
+- **tam**: tamanho da família, número de integrantes;
 - **renda**: renda familiar em salários mínimos;
 - **fumantes**: número de fumantes na família.
 
-Também foi disponibilizada uma base de dados com uma lista de números sorteados. Esses números representam a linha de elementos sorteados através do método de Amostragem Aleatório Simples. Isto é, dada a população, é selecionada uma amostra de pessoas que fornecem os dados para a pesquisa, quando o método de amostragem é AAS, tem-se que esse método é através de sorteio, em que cada elemento tem a mesma chance de ocorrer. A lista fornecida diz respeito a lista elementos/pessoas sorteados.
+Também foi disponibilizada uma base de dados com uma lista de números sorteados. Esses números representavam as linhas onde se encontravam os elementos sorteados através do método de Amostragem Aleatória Simples. Isto é, dada a população, seleciona-se uma amostra de pessoas para fornecerem os dados para a pesquisa, no método de amostragem é AAS, a seleção ocorre por meio de sorteio, em que cada elemento tem a mesma chance de ocorrer. A lista fornecida diz respeito aos elementos (pessoas) sorteados.
 
 Nesse sentido, este trabalho se propõe a investigar a relação entre população e amostra de acordo com vários métodos de amostragem, a lista a seguir mostra o tipo de amostragem e um resumo da investigação feita utilizando cada um deles.
 
-1) Amostragem Aleatória Simples: Estimar métricas populacionais através de parâmetros amostrais utilizando o sorteio fornecido;
+1) Amostragem Aleatória Simples: estimar métricas populacionais através de parâmetros amostrais utilizando o sorteio fornecido;
 
-2) Amostragem por Conglomerado: Estimar métricas populacionais através de parâmetros amostrais utilizando cálculos mais robustos que discutam a relação entre custo da pesquisa e resultados obitidos;
+2) Amostragem por Conglomerado: estimar métricas populacionais através de parâmetros amostrais utilizando cálculos mais robustos que discutam a relação entre custo da pesquisa e resultados obitidos;
 
-3) Amostragem Estratificada: Separa a população em características fornecidas pelas variáveis e discute quais variáveis são mais relevantes para estimar a renda;
+3) Amostragem Estratificada: separa a população em características fornecidas pelas variáveis e discute quais variáveis são mais relevantes para estimar a renda;
 
 4) Conclusão: analisar qual método de amostragem foi mais eficiente em prever as métricas populacionais.
 
-Vale ressaltar ainda que para o desenvolvimento deste trabalho foram utilizada a linguagem R e as bibliotecas `readxl`, `tidyverse`, `dplyr`, `tidyr`. Para a coleta de dados foi utilizado o seguinte comando:
+Vale ressaltar ainda que para o desenvolvimento deste trabalho utilizou-se a linguagem R e as bibliotecas `readxl`, `tidyverse`, `dplyr`, `tidyr`. Para a coleta de dados foi utilizado o seguinte comando:
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Dados gerais
@@ -58,7 +58,7 @@ pop_data <- read_excel(path, sheet = "População-aTrabalhar")
 
 # Amostragem Aleatória Simples
 
-Para a análise utilizando Amostragem Aleatória Simples sem reposição, foi utilizada a base de dados com o sorteio. Através dessa base de dados foi gerada uma nova base de dados apenas com os elementos da amostra.
+A Amostragem Aleatória Simples é o método em que cada elemento de uma população tem a mesma probabilidade de ser selecionado. Esse tipo de amostragem pode ser com ou sem reposição. Para este relatório utiliza-se a AAS sem reposição, que é utilizada para lidar com população finita e possui um fator de correção nas fórmulas. O método é empregado através da base de dados com as linhas do sorteio. Através dessa base de dados é gerada uma nova base de dados apenas com os elementos da amostra, como pode ser visto no código a seguir.
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Dados Amostragem Aleatória Simples
@@ -83,11 +83,20 @@ z_98 <- qnorm(1 - 0.02/2) # Valor crítico p/ Intervalo de Confiança de 98%
 
 Em seguida, realiza-se os cálculos:
 
-a) Estimativa da média populacional de renda e cálculo da variância da estimativa
+
+### a) Estimativa da média populacional de renda e cálculo da variância da estimativa.
+
+
+* Média: $\hat{\mu} = \bar{y} = \frac{1}{n}\sum_{i=1}^{n} y_i$
+
+* Variância da estimativa da média : $\widehat{\mathrm{Var}}(\hat{\mu}) = \left(1 - f\right)\frac{s^2}{n},\quad \text{com } f = \frac{n}{N}$
+
+* Variância amostral: $s^2 = \frac{1}{n-1}\sum_{i=1}^{n}(y_i - \bar{y})^2$
+
+
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 #Renda
-
 media_estimada <- mean(sample_data$renda, na.rm = TRUE)
 
 variancia_amostral <- var(sample_data$renda, na.rm = TRUE)
@@ -104,14 +113,19 @@ cat("RESULTADOS: ESTIMATIVA DA MÉDIA (AAS)             \n",
     sprintf("Erro Padrão da Média:          %.4f\n", sqrt(variancia_estimativa)))
 ```
 
+&nbsp;
 
 
+### b) Estimativa do tamanho médio das famílias e cálculo da variância da estimativa.
 
-b) Estimativa do tamanho médio das famílias e cálculo da variância da estimativa
+* Média amostral: $\hat{\mu}{\text{tam}} = \bar{y}{\text{tam}} = \frac{1}{n}\sum_{i=1}^{n} y_{\text{tam},i}$
+
+* Variância da média amostral: $\widehat{\mathrm{Var}}(\hat{\mu}{\text{tam}}) = \left(1 - f\right)\frac{s^2{\text{tam}}}{n}, \quad \text{com } f = \frac{n}{N}$
+
+* Variância amostral: $s^2_{\text{tam}} = \frac{1}{n-1}\sum_{i=1}^{n}(y_{\text{tam},i} - \bar{y}_{\text{tam}})^2$
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Tamanho das famílias
-
 media_tam_estimada <- mean(sample_data$tam, na.rm = TRUE)
 
 variancia_amostral_tam <- var(sample_data$tam, na.rm = TRUE)
@@ -127,14 +141,19 @@ cat("RESULTADOS: ESTIMATIVA DO TAMANHO DA FAMÍLIA (AAS)   \n",
     sprintf("Erro Padrão da Média:          %.4f\n", sqrt(variancia_estimativa_tam)))
 ```
 
+&nbsp;
 
 
+### c) Estimativa do total de pessoas que moram na região e variância da estimativa.
 
-c) Estimativa do total de pessoas que moram na região e variância da estimativa
+* Estimador do total populacional: $\hat{T} = N,\bar{y} = N\left(\frac{1}{n}\sum_{i=1}^{n} y_i\right)$
+
+* Variância do estimador do total: $\widehat{\mathrm{Var}}(\hat{T}) = N^2\left(1 f\right)\frac{s^2}{n},\quad \text{com } f = \frac{n}{N}$
+
+* Variância amostral: $s^2 = \frac{1}{n-1}\sum_{i=1}^{n}(y_i - \bar{y})^2$
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Total de pessoas
-
 media_tam <- mean(sample_data$tam, na.rm = TRUE)
 total_pessoas_estimado <- N * media_tam
 
@@ -154,13 +173,24 @@ cat("RESULTADOS: ESTIMATIVA DO TOTAL DE PESSOAS        \n",
 ```
 
 
+&nbsp;
 
 
+### d) Estimativa da proporção de fumantes e variância da estimativa, bem como o intervalo de 98% de confiança para a proporção populacional
 
-d) Estimativa da proporção de fumantes e variância da estimativa, bem como o intervalo de 98% de confiança para a proporção populacional
+* Estimador razão da proporção populacional: $hat{P} = \frac{\sum_{i=1}^{n} y_i}{\sum_{i=1}^{n} x_i}= \frac{\bar{y}}{\bar{x}}$, em que  $y_i$ indica o número de fumantes no domicílio $i$ e $x_i$ indica o tamanho do domicílio $i$.
+
+* Variância do estimador razão: $\widehat{\mathrm{Var}}(\hat{P}) =\frac{1 - f}{n,\bar{x}^2}\left(s_y^2 + \hat{P}^2 s_x^2 - 2\hat{P}s_{xy}\right)$
+
+* Variância amostral de $y$: $s_y^2 = \frac{1}{n-1}\sum_{i=1}^{n}(y_i - \bar{y})^2$
+
+* Variância amostral de $x$: $s_x^2 = \frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})^2$
+
+* Covariância amostral entre $x$ e $y$: $s_{xy} = \frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y})$
+
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
-# Proporção de fumantes - unidade amostral é o indivíduo
+# Proporção de fumantes
 
 y <- sample_data$fumantes
 x <- sample_data$tam
@@ -190,7 +220,7 @@ cat("ESTIMATIVA DA PROPORÇÃO DE FUMANTES (RAZÃO)         \n",
 ```
 
 
-
+&nbsp;
 
 
 # Amostragem por Conglomerado  
@@ -203,11 +233,10 @@ Descrição do Plano Amostral:
 - Método de Sorteio: Amostragem Aleatória Simples sem reposição aplicada nas localidades (variável "local");
 - Procedimento: Sorteamos 3 números entre 1 e 7 através da função `sample` no R. As localidades correspondentes a esses números terão todos os seus dados coletados para compor a amostra final.
 
-Para manter as mesmas unidades do sorteio e facilitar análise, foi definida uma seed. Sendo assim, o código utilizado foi:
+Para manter as mesmas unidades do sorteio e facilitar análise, definiu-se uma seed.
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Sorteio das localidades
-
 conglomerados_unicos <- unique(pop_data$local)
 
 set.seed(123)
@@ -227,7 +256,6 @@ cat("SORTEIO DE CONGLOMERADOS         \n",
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Variáveis
-
 M <- length(conglomerados_unicos)
 m <- 3
 f_ac <- m / M
@@ -237,11 +265,22 @@ f_ac <- m / M
 
 Realiza-se os cálculos:
 
-a) Estimativa da média populacional de renda e cálculo da variância da estimativa
+### a) Estimativa da média populacional de renda e cálculo da variância da estimativa.
+
+* Estimador razão da média populacional:
+$\hat{\mu} = \frac{\sum_{i=1}^{m} y_i}{\sum_{i=1}^{m} x_i} = \frac{\bar{y}_c}{\bar{x}_c}$, em que $y_i$ é o total de renda no conglomerado $i$, $x_i$ é o número de unidades no conglomerado $i$ e $m$ é o número de conglomerados amostrados.
+
+* Média do tamanho dos conglomerados:
+$\bar{x}c = \frac{1}{m}\\sum{i \in h} x_i$
+
+* Variância entre conglomerados:
+$s_c^2 = \frac{1}{m-1}\sum_{i=1}^{m}\left(y_i - \hat{\mu} x_i\right)^2$
+
+* Variância do estimador da média (conglomerados, AAS de conglomerados):
+$\widehat{\mathrm{Var}}(\hat{\mu}) = (1 - f_c)\frac{s_c^2}{m,\bar{x}_c^2}$, em que $f_c = \frac{m}{M}$ é a fração amostral de conglomerados.
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Renda
-
 # cálculos Agregados por Conglomerado
 resumo_ac <- amostra_ac %>%
   group_by(local) %>%
@@ -271,11 +310,24 @@ cat("RESULTADOS: AMOSTRAGEM POR CONGLOMERADO\n",
     sprintf("Margem de Erro (95%%):          %.4f\n", 1.96 * sqrt(variancia_media_ac)))
 ```
 
-b) Estimativa do tamanho médio das famílias e cálculo da variância da estimativa
+&nbsp;
+
+### b) Estimativa do tamanho médio das famílias e cálculo da variância da estimativa
+
+* Estimador razão do tamanho médio das famílias (conglomerados):
+$\hat{\mu}{\text{tam}} = \frac{\sum{i=1}^{m} y_i}{\sum_{i=1}^{m} x_i} = \frac{\bar{y}_{c,\text{tam}}}{\bar{x}_c}$, em que $y_i$ é o total do tamanho das famílias no conglomerado $i$, $x_i$ é o número de domicílios no conglomerado $i$ e $m$ é o número de conglomerados amostrados.
+
+* Média do tamanho dos conglomerados:
+$\bar{x}c = \frac{1}{m}\sum{i=1}^{m} x_i$
+
+* Variância entre conglomerados:
+$s_{c,\text{tam}}^2 = \frac{1}{m-1}\sum_{i=1}^{m}\left(y_i - \hat{\mu}_{\text{tam}} x_i\right)^2$
+
+* Variância do estimador do tamanho médio (conglomerados, AAS de conglomerados):
+$\widehat{\mathrm{Var}}(\hat{\mu}{\text{tam}}) = (1 - f_c)\frac{s{c,\text{tam}}^2}{m,\bar{x}_c^2}$, em que $f_c = \frac{m}{M}$ é a fração amostral de conglomerados.
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Tamanho médio das famílias
-
 # calculo agregado por conglomerado
 resumo_ac_tam <- amostra_ac %>%
   group_by(local) %>%
@@ -311,11 +363,22 @@ cat("RESULTADOS: TAMANHO MÉDIO DAS FAMÍLIAS\n",
             media_ac_tam + 1.96 * sqrt(variancia_media_ac_tam)))
 ```
 
-c) Estimativa do total de pessoas que moram na região e variância da estimativa
+&nbsp;
+
+### c) Estimativa do total de pessoas que moram na região e variância da estimativa.
+
+* Estimador de expansão do total populacional (conglomerados):
+$\hat{T} = \frac{M}{m}\sum_{i=1}^{m} y_i$, em que $y_i$ é o total de pessoas no conglomerado $i$, $m$ é o número de conglomerados amostrados e $M$ é o número total de conglomerados na população.
+
+* Variância amostral dos totais por conglomerado:
+$s_y^2 = \frac{1}{m-1}\sum_{i=1}^{m}(y_i - \bar{y})^2$, em que $\bar{y} = \frac{1}{m}\sum_{i=1}^{m} y_i$.
+
+* Variância do estimador do total populacional (conglomerados, AAS de conglomerados):
+$\widehat{\mathrm{Var}}(\hat{T}) = M^2(1 - f_c)\frac{s_y^2}{m}$, em que $f_c = \frac{m}{M}$ 
+é a fração amostral de conglomerados.
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Total de pessoas
-
 # calculo agregado por conglomerado
 resumo_ac_total <- amostra_ac %>%
   group_by(local) %>%
@@ -345,11 +408,27 @@ cat("RESULTADOS: TOTAL DE PESSOAS NA REGIÃO\n",
             total_pessoas_estimado_ac + 1.96 * sqrt(variancia_total_ac)))
 ```
 
-d) Estimativa da proporção de fumantes e variância da estimativa, bem como o intervalo de 98% de confiança para a proporção populacional
+
+
+### d) Estimativa da proporção de fumantes e variância da estimativa, bem como o intervalo de 98% de confiança para a proporção populacional
+
+* Estimador razão da proporção populacional (conglomerados):
+$\hat{P} = \frac{\sum_{i=1}^{m} y_i}{\sum_{i=1}^{m} x_i} = \frac{\bar{y}_c}{\bar{x}_c}$, em que $y_i$ é o total de fumantes no conglomerado $i$, $x_i$ é o total de pessoas no conglomerado $i$ e $m$ é o número de conglomerados amostrados.
+
+* Média do tamanho dos conglomerados (em pessoas):
+$\bar{x}c = \frac{1}{m}\sum{i=1}^{m} x_i$
+
+* Variância residual entre conglomerados (estimador razão):
+$s_{c,P}^2 = \frac{1}{m-1}\sum_{i=1}^{m}\left(y_i - \hat{P}x_i\right)^2$
+
+* Variância do estimador razão da proporção (conglomerados, AAS de conglomerados):
+$\widehat{\mathrm{Var}}(\hat{P}) = (1 - f_c)\frac{s_{c,P}^2}{m,\bar{x}_c^2}$, em que $f_c = \frac{m}{M}$ é a fração amostral de conglomerados.
+
+* Intervalo de confiança normal de 98% para a proporção populacional:
+$IC_{98\%}(P) = (\hat{P} - z_{0,99}\sqrt{\widehat{\mathrm{Var}}(\hat{P})},; \hat{P} + z_{0,99}\sqrt{\widehat{\mathrm{Var}}(\hat{P})})$
 
 ```{r, echo=TRUE, warning=FALSE, message = FALSE, fig.width=10, fig.height=6}
 # Proporção de fumantes
-
 # calculo agregado por conglomerado
 resumo_ac_prop <- amostra_ac %>%
   group_by(local) %>%
@@ -390,6 +469,7 @@ cat("RESULTADOS: PROPORÇÃO DE FUMANTES\n",
     sprintf("Formato Porcentagem:           [%.2f%% ; %.2f%%]\n", limite_inf * 100, limite_sup * 100))
 ```
 
+&nbsp;
 
 # Amostragem Estratificada
 
@@ -398,6 +478,23 @@ A amostragem estratificada é uma método de amostragem que divide a população
 Sendo assim, a melhor variável para dividir a população entre estratos é aquela que consegue equilibrar semelhança interna dos grupos com diferença externa entre os grupos. Para mensurar essa relação, utiliza-se a razão entre a Variância entre Médias e a Variância Interna dos estratos. Quanto maior for esse coeficiente, maior será o ganho de precisão do plano amostral. Isso ocorre porque, ao reduzir a variância interna, o erro padrão da estimativa global diminui, permitindo projeções mais exatas sobre a variável alvo a partir do grupo ao qual cada elemento pertence. 
 
 Ao aplicar esse raciocínio à base de dados populacional com foco na renda, identificou-se que o ensino foi a variável que apresentou o maior coeficiente de recomendação. Estatisticamente, o ensino obteve uma variância entre médias de aproximadamente 3,37 e uma média de variância interna de 1,907. A variável sexo apresentou o segundo melhor desempenho. Portanto, conclui-se que, para a formulação de um plano de amostragem estratificada otimizado, o ensino e o sexo seriam as variáveis fundamentais para garantir a precisão nas estimativas de renda. 
+
+* Média da variável alvo no estrato ℎ
+h:$\bar{y}h = \frac{1}{N_h}\sum{i \in h} y_i$, em que $N_h$ é o tamanho do estrato $h$.
+
+* Variância entre médias dos estratos:
+$s^2_{\text{entre}} = \frac{1}{H-1}\sum_{h=1}^{H}(\bar{y}_h - \bar{y})^2$, em que $\bar{y}$ é a média global da população e $H$ é o número de estratos.
+
+* Desvio padrão interno do estrato 
+ℎ
+h:
+$s_h = \sqrt{\frac{1}{N_h-1}\sum_{i \in h}(y_i - \bar{y}_h)^2}$
+
+* Variância interna média ponderada dos estratos:
+$s_{\text{interna}} = \sum_{h=1}^{H} w_h s_h$, em que $w_h = \frac{N_h}{N}$ representa o peso do estrato $h$ na população.
+
+* Coeficiente de recomendação da variável de estratificação:
+$C = \frac{s_{\text{entre}}}{s_{\text{interna}}}$
 
 O código a seguir explicita como o cálculo foi desenvolvido:
 
@@ -438,6 +535,8 @@ cat(sprintf("\nRECOMENDAÇÃO: A variável '%s' é a mais adequada,\n", melhor_v
     "pois ela apresenta o melhor equilíbrio entre\n",
     "diferenciação de rendas e grupos internos homogêneos.\n")
 ```
+
+&nbsp;
 
 # Comparação entre Métodos de Amostragem
 

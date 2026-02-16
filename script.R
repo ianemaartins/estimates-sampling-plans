@@ -302,6 +302,7 @@ cat("=========================================================\n")
 
 # AMOSTRAGEM ESTRATIFICADA
 
+#função para avaliar potencial das variáveis
 avaliar_potencial <- function(df, var_alvo, var_estrato) {
   df %>%
     group_by(.data[[var_estrato]]) %>%
@@ -313,9 +314,9 @@ avaliar_potencial <- function(df, var_alvo, var_estrato) {
     ) %>%
     summarise(
       Variavel = var_estrato,
-      # Desvio padrão das médias -> Quanto maior o std, melhor a separação entre grupos
+      # Desvio padrão das médias (quanto maior o std, melhor a separação entre grupos)
       Separacao_Medias = sd(media, na.rm = TRUE),
-      # Média ponderada dos desvios padrões (Quanto menor, mais homogêneo o estrato)
+      # Média ponderada dos desvios padrões (quanto menor, mais homogêneo o estrato)
       Homogeneidade_Interna = weighted.mean(sd_interna, n, na.rm = TRUE)
     )
 }
@@ -326,7 +327,7 @@ candidatas <- c("local", "sexo", "ensino", "tam", "fumantes")
 # Execução do Ranking
 ranking <- lapply(candidatas, function(v) avaliar_potencial(pop_data, "renda", v)) %>%
   bind_rows() %>%
-  # Criamos um Score: Prioriza alta separação de médias e baixa variância interna
+  # Criação do coeficiente que prioriza alta separação de médias e baixa variância interna
   mutate(Score_Recomendacao = Separacao_Medias / Homogeneidade_Interna) %>%
   arrange(desc(Score_Recomendacao))
 
